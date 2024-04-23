@@ -1,58 +1,43 @@
 'use client'
-import { useState } from 'react'
-import Image from 'next/image'
-import axios from 'axios'
+import { FormEvent, FormEventHandler, useState } from 'react'
 
 export default function Home() {
   const [uploading, setUploading] = useState<boolean>(false)
-  const [selectedimage, setSelectedimage] = useState<string>('')
-  const [selectedfile, setSelectedfile] = useState<File>()
+  const [file, setFile] = useState<File>()
 
-  const handleUpload = async () => {
-    setUploading(true)
+  const onSubmit: FormEventHandler = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (!file) return
+
     try {
-      if (!selectedfile) return
-      const formData = new FormData()
-      formData.append('myImage', selectedfile)
-      const { data } = await axios.post('/api/image', formData)
-      console.log(data)
-    } catch (error: any) {
-      console.log(error)
+      const data = new FormData()
+      data.set('file', file)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: data,
+      })
+
+      if (!res.ok) throw new Error(await res.text())
+    } catch (e: any) {
+      console.error(e)
     }
-    setUploading(false)
   }
 
   return (
     <main className='flex flex-col items-center justify-between p-24'>
-      <label>
-        <input
-          type='file'
-          hidden
-          onChange={({ target }) => {
-            if (target.files) {
-              const file: File = target.files[0]
-              setSelectedimage(URL.createObjectURL(file))
-              setSelectedfile(file)
-            }
-          }}
-        />
-        <div className='w-40 aspect-video rounded flex items-center justify-center border-2 border-dashed cursor-pointer'>
-          {selectedimage ? (
-            <Image src={selectedimage} alt='Selected image' width={160} height={90}/>
-          ) : (
-            <span>Select image</span>
-          )}
-        </div>
-      </label>
+      <form onSubmit={onSubmit}>
+        <input type='file' onChange={(e) => setFile(e.target.files?.[0])} />
 
-      <button
-        onClick={handleUpload}
-        disabled={uploading}
-        style={{ opacity: uploading ? '.5' : '1' }}
-        className='bg-red-600 p-3 w-32 text-center rounded text-white'
-      >
-        {uploading ? 'Uploading...' : 'Upload'}
-      </button>
+        <input
+          type='submit'
+          value={uploading ? 'Uploading...' : 'Upload'}
+          disabled={uploading}
+          style={{ opacity: uploading ? '.5' : '1' }}
+          className='bg-red-600 p-3 w-32 text-center rounded text-white'
+        />
+      </form>
     </main>
   )
 }
