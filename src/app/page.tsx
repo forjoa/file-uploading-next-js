@@ -9,7 +9,7 @@ export default function Home() {
     e.preventDefault()
 
     if (!file) return
-
+    setUploading(true)
     try {
       const data = new FormData()
       data.set('file', file)
@@ -23,6 +23,7 @@ export default function Home() {
     } catch (e: any) {
       console.error(e)
     }
+    setUploading(false)
   }
 
   return (
